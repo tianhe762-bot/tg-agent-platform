@@ -36,10 +36,12 @@ Monolithic Python Runtime (asyncio + 模块级异常隔离)
 ### 1. 一键安装（Debian）
 
 ```bash
-sudo bash scripts/install.sh
+curl -fsSL https://raw.githubusercontent.com/tianhe762-bot/tg-agent-platform/main/install.sh | sudo bash
 ```
 
-自动完成：创建 `tgagent` 用户 → 部署到 `/opt/tg-agent` → 创建 venv 并安装依赖 → 生成 `configs/.env` → 安装 systemd 服务。
+或使用本地源码包：`sudo bash scripts/install.sh`。
+
+安装程序自动完成：创建 `tgagent` 用户 → 部署到 `/opt/tg-agent` → 创建 venv 并安装依赖 → 生成 `configs/.env` → 安装 systemd 服务。
 
 ### 2. 填写配置
 
@@ -51,7 +53,15 @@ sudo nano /opt/tg-agent/configs/.env
 
 - `BOT_TOKEN`：找 [@BotFather](https://t.me/BotFather) 创建
 - `ADMIN_IDS`：你的 Telegram 数字 ID（逗号分隔）
-- `LLM_API_KEY`：OpenAI 或任意 OpenAI 兼容服务密钥（本地 vLLM/Ollama 可留空）
+- `LLM_API_KEY`：DeepSeek / OpenAI 或任意 OpenAI 兼容服务密钥（本地 vLLM/Ollama 可留空）
+
+DeepSeek 示例：
+
+```bash
+LLM_BASE_URL=https://api.deepseek.com
+LLM_API_KEY=sk-xxxxxxxxxxxxxxxx
+LLM_MODEL=deepseek-chat
+```
 
 常用项：`MIHOMO_API`（Clash 外部控制器地址）、`WOL_MAC`、`TG_PROXY`、`SUDO_WHITELIST`。
 

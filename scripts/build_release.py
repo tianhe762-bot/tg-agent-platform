@@ -29,6 +29,8 @@ INCLUDE = [
     "docker",
     "tests",
     ".github",
+    "install.sh",
+    "docs",
     "requirements.txt",
     "VERSION",
     "README.md",

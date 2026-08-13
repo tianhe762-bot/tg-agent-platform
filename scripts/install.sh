@@ -30,11 +30,11 @@ fi
 mkdir -p "$APP_DIR"/{src,tools,configs,data,logs,scripts,systemd}
 
 # 3. 拷贝程序文件（排除开发目录与敏感配置）
-cp -r "$SRC_DIR/src" "$APP_DIR/src"
+cp -r "$SRC_DIR/src/." "$APP_DIR/src/"
 cp "$SRC_DIR/requirements.txt" "$APP_DIR/"
 cp "$SRC_DIR/VERSION" "$APP_DIR/"
-cp -r "$SRC_DIR/scripts" "$APP_DIR/scripts"
-cp -r "$SRC_DIR/systemd" "$APP_DIR/systemd"
+cp -r "$SRC_DIR/scripts/." "$APP_DIR/scripts/"
+cp -r "$SRC_DIR/systemd/." "$APP_DIR/systemd/"
 
 # 4. 虚拟环境与依赖
 if [ ! -d "$APP_DIR/venv" ]; then
