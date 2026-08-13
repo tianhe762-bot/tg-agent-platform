@@ -3,6 +3,9 @@ TG-Agent 开发计划 (Python 版) v1.0.0
 
 状态：全部完成 [DONE]，2026-08-13 发布 v1.0.0
 
+版本基线：v1.0.0 确认为稳定版，此后按语义化版本正常迭代
+（v1.0.x 补丁 / v1.x.0 新功能 / v2.0.0 重大变更）。
+
 阶段一：准备工作 [DONE]
 1. 确认开发环境：Python 3.11+（本机使用 3.12 验证）、pip、git、systemd、Docker
 2. 创建项目根目录及子目录结构（src/, src/tools/, configs/, data/, logs/,
