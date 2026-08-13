@@ -9,6 +9,8 @@
 # ============================================================
 set -euo pipefail
 
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
+
 REPO="tianhe762-bot/tg-agent-platform"
 PROXY_OPTS=()
 [ -n "${TG_PROXY:-}" ] && PROXY_OPTS=(--proxy "$TG_PROXY")

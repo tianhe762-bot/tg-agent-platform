@@ -5,6 +5,8 @@
 # ============================================================
 set -euo pipefail
 
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
+
 if [ "$(id -u)" -ne 0 ]; then
     echo "❌ 请使用 root 权限运行: sudo bash scripts/install.sh"
     exit 1
