@@ -83,6 +83,20 @@ async def test_degrade_level2_disables_tools():
 
 
 @pytest.mark.asyncio
+async def test_pure_mode_no_tools_single_call():
+    registry = ToolRegistry()
+
+    async def boom(chat_id, args):
+        raise AssertionError("pure mode must not call tools")
+
+    registry.register(Tool("boom", "boom", boom))
+    agent = make_agent(['{"action": {"name": "boom", "arguments": {}}}'], registry)
+    result = await agent.handle(1, 1, "你好呀", pure=True)
+    assert result == '{"action": {"name": "boom", "arguments": {}}}'
+    assert len(agent.llm.calls) == 1
+
+
+@pytest.mark.asyncio
 async def test_handle_command_routing():
     registry = ToolRegistry()
 
