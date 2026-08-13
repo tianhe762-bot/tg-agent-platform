@@ -106,6 +106,12 @@ class TelegramGateway:
         return False
 
     # ------------------------------------------------------------------
+    async def _pure_ai_enabled(self) -> bool:
+        try:
+            return (await self.db.kv_get("pure_ai_mode")) == "true"
+        except Exception:
+            return False
+
     async def _on_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if not self._is_admin(update.effective_user.id if update.effective_user else None):
             await self._send(context, update.effective_chat.id, "❌ 无权限")
@@ -113,6 +119,20 @@ class TelegramGateway:
         message = update.effective_message
         chat_id = update.effective_chat.id
         text = inbound_sanitize(message.text or "")
+        await self._record_message(chat_id, update.effective_user.id, text)
+
+        # 纯 AI 模式：所有消息（含 / 开头）直接交给 AI 纯聊天
+        if await self._pure_ai_enabled():
+            if detect_injection(text):
+                await self._send(context, chat_id, "❌ 请求包含疑似注入特征，已拦截")
+                return
+            try:
+                result = await self.agent.handle(update.effective_user.id, chat_id, text, pure=True)
+            except CircuitOpenError as exc:
+                result = f"⚠️ {exc}"
+            await self._send(context, chat_id, result)
+            return
+
         parts = text.split(maxsplit=1)
         cmd = parts[0].lstrip("/").split("@")[0].lower()
         args = parts[1] if len(parts) > 1 else ""
@@ -121,7 +141,6 @@ class TelegramGateway:
             await self._send(context, chat_id, f"⚠️ 危险操作。再次发送 /{cmd} 确认执行（{int(CONFIRM_TTL)} 秒内有效）。")
             return
 
-        await self._record_message(chat_id, update.effective_user.id, text)
         if cmd == "ai":
             if detect_injection(args):
                 logger.warning("inbound injection blocked from user %s", update.effective_user.id)
@@ -148,7 +167,7 @@ class TelegramGateway:
             return
         await self._record_message(chat_id, update.effective_user.id, text)
         try:
-            result = await self.agent.handle(update.effective_user.id, chat_id, text)
+            result = await self.agent.handle(update.effective_user.id, chat_id, text, pure=await self._pure_ai_enabled())
         except CircuitOpenError as exc:
             result = f"⚠️ {exc}"
         await self._send(context, chat_id, result)
