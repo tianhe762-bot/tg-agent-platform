@@ -19,6 +19,7 @@ TG-Agent Python 版首个正式发布，作为 Bash 版 tg-bot-platform 的升�
 - 运维 CLI：`status`、`reload`、`soft-reset`、`kill-subprocesses`、`backup`、`restart`
 - 部署：systemd（CPUQuota=95%、IOWeight=20、ProtectSystem=strict）、一键安装脚本、Docker、GitHub Actions CI
 - 卸载：`scripts/uninstall.sh` 支持保留数据卸载与完全卸载两种模式
+- 管理面板：`sudo tg-agent` 交互式菜单（标题 + GitHub 链接，含状态/日志/配置/备份/重启/卸载）
 
 ### 与 Bash 版的关系
 

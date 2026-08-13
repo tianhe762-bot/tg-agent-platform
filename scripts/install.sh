@@ -73,7 +73,12 @@ systemctl daemon-reload
 systemctl enable tg-agent.service
 echo "✅ systemd 服务已启用"
 
-# 8. 权限
+# 8. 面板入口
+chmod +x "$APP_DIR/scripts/panel.sh"
+ln -sf "$APP_DIR/scripts/panel.sh" /usr/local/bin/tg-agent
+echo "✅ 管理面板已安装（输入 sudo tg-agent 打开）"
+
+# 9. 权限
 chown -R tgagent:tgagent "$APP_DIR"
 
 echo
@@ -85,3 +90,4 @@ echo "下一步："
 echo "1. 编辑 $APP_DIR/configs/.env 填入配置"
 echo "2. 启动服务: sudo systemctl start tg-agent.service"
 echo "3. 查看日志: sudo journalctl -u tg-agent -f"
+echo "4. 管理面板: sudo tg-agent"

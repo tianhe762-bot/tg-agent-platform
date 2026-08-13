@@ -65,6 +65,7 @@ systemctl disable tg-agent.service 2>/dev/null || true
 echo "[2/3] 清理 systemd 单元与 sudo 白名单..."
 rm -f /etc/systemd/system/tg-agent.service
 rm -f /etc/sudoers.d/tg-agent
+rm -f /usr/local/bin/tg-agent
 systemctl daemon-reload 2>/dev/null || true
 
 if [ "$MODE" = "full" ]; then

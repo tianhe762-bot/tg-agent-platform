@@ -36,6 +36,16 @@ sudo journalctl -u tg-agent -f
 
 ## 运维 CLI（服务器上）
 
+交互式管理面板：
+
+```bash
+sudo tg-agent
+```
+
+面板包含：状态、实时日志、热重载、温和重置、强杀子进程、备份、编辑配置、重启、卸载。
+
+命令行方式：
+
 ```bash
 cd /opt/tg-agent
 sudo -u tgagent venv/bin/python -m src.cli status
