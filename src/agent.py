@@ -49,12 +49,23 @@ class Agent:
         self.monitor = monitor
 
     # ------------------------------------------------------------------
-    async def handle(self, user_id: int, chat_id: int, text: str) -> str:
-        """ReAct loop for natural-language requests (the /ai path)."""
+    async def handle(self, user_id: int, chat_id: int, text: str, pure: bool = False) -> str:
+        """AI 入口。``pure=True`` 时为纯聊天模式：不调用工具、不解析命令。"""
+        if pure:
+            messages: List[Dict[str, str]] = [
+                {
+                    "role": "system",
+                    "content": "你是 TG-Agent，一个友善的中文 AI 助手。当前为纯 AI 对话模式："
+                    "只聊天，不调用任何工具，不执行任何命令。请直接、自然地回答用户的问题。",
+                },
+                {"role": "user", "content": text},
+            ]
+            return await self.llm.complete(messages, temperature=self.config.llm_temperature)
+
         if self.monitor.degrade >= 2:
             return "⚠️ 系统处于二级降级模式，已禁用工具调用。请稍后再试或使用 /status 查看基础状态。"
 
-        messages: List[Dict[str, str]] = [
+        messages = [
             {"role": "system", "content": build_system_prompt(self.registry, self.monitor.degrade)},
             {"role": "user", "content": text},
         ]
