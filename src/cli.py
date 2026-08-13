@@ -70,6 +70,31 @@ def cmd_backup(config: AppConfig) -> int:
     return 0
 
 
+def cmd_pure_ai(config: AppConfig, state: str) -> int:
+    """纯 AI 模式开关：on / off / status（持久化到数据库 kv）。"""
+    try:
+        config.data_dir.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(str(config.db_path))
+        conn.execute("CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT)")
+        if state in ("on", "off"):
+            value = "true" if state == "on" else "false"
+            conn.execute(
+                "INSERT INTO kv(key, value) VALUES('pure_ai_mode', ?) "
+                "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                (value,),
+            )
+            conn.commit()
+            print(f"纯AI模式: {'已开启' if value == 'true' else '已关闭'}")
+        else:
+            row = conn.execute("SELECT value FROM kv WHERE key='pure_ai_mode'").fetchone()
+            print(f"纯AI模式: {'开启' if row and row[0] == 'true' else '关闭'}")
+        conn.close()
+    except sqlite3.Error as exc:
+        print(f"数据库操作失败: {exc}")
+        return 1
+    return 0
+
+
 def cmd_kill_subprocesses(config: AppConfig) -> int:
     pgid_file = Path(config.data_dir) / "subprocesses.pid"
     killed = 0
@@ -114,6 +139,8 @@ def main(argv=None) -> int:
     sub.add_parser("kill-subprocesses", help="强杀所有活跃子进程组")
     sub.add_parser("backup", help="触发数据库与配置备份")
     sub.add_parser("restart", help="重启 tg-agent systemd 服务")
+    pure = sub.add_parser("pure-ai", help="纯 AI 模式开关（on/off/status）")
+    pure.add_argument("state", nargs="?", choices=["on", "off", "status"], default="status")
 
     args = parser.parse_args(argv)
     config = AppConfig.from_env(args.config)
@@ -124,7 +151,10 @@ def main(argv=None) -> int:
         "kill-subprocesses": cmd_kill_subprocesses,
         "backup": cmd_backup,
         "restart": cmd_restart,
+        "pure-ai": cmd_pure_ai,
     }
+    if args.command == "pure-ai":
+        return handlers[args.command](config, args.state)
     return handlers[args.command](config)
 
 
