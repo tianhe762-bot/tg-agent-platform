@@ -18,6 +18,7 @@ TG-Agent Python 版首个正式发布，作为 Bash 版 tg-bot-platform 的升�
 - 看门狗：事件循环心跳检测，卡死自动重启（systemd 兜底）
 - 运维 CLI：`status`、`reload`、`soft-reset`、`kill-subprocesses`、`backup`、`restart`
 - 部署：systemd（CPUQuota=95%、IOWeight=20、ProtectSystem=strict）、一键安装脚本、Docker、GitHub Actions CI
+- 卸载：`scripts/uninstall.sh` 支持保留数据卸载与完全卸载两种模式
 
 ### 与 Bash 版的关系
 

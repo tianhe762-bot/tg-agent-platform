@@ -66,6 +66,17 @@ sudo -u tgagent venv/bin/python -m src.cli backup
 sudo cp -r /opt/tg-agent/configs /opt/tg-agent/configs.bak.$(date +%Y%m%d)
 ```
 
+## 卸载
+
+两种模式，均需 root：
+
+```bash
+sudo bash /opt/tg-agent/scripts/uninstall.sh --keep-data  # 保留配置与数据
+sudo bash /opt/tg-agent/scripts/uninstall.sh --full       # 完全卸载
+```
+
+或直接运行 `sudo bash /opt/tg-agent/scripts/uninstall.sh` 进入交互选择。完全卸载会删除 `/opt/tg-agent`、systemd 单元、sudo 白名单与 `tgagent` 用户，需输入 `yes` 确认。
+
 ## 旧 Bash 平台共存
 
 TG-Agent 与旧平台（`/opt/tg_bot`）可同时运行；两者使用不同 Bot Token 时不冲突。迁移时可直接复用旧平台 `configs` 中的 `TOKEN/ADMINS/MIHOMO_API/TG_PROXY` 等配置。

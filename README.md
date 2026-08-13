@@ -119,6 +119,17 @@ bash scripts/release.sh   # 生成 dist/tg-agent-vX.Y.Z.tar.gz + .sha256
 
 发布包内所有文本文件统一 LF 换行（CI 强制校验无 CRLF），防止 Windows autocrlf 破坏服务器脚本。
 
+## 🗑️ 卸载
+
+```bash
+sudo bash scripts/uninstall.sh             # 交互式选择
+sudo bash scripts/uninstall.sh --keep-data # 保留配置与数据（可重装）
+sudo bash scripts/uninstall.sh --full      # 完全卸载（删除全部，不可恢复）
+```
+
+- 保留数据卸载：移除程序与 systemd 服务，`/opt/tg-agent` 的配置和数据原样保留
+- 完全卸载：删除程序、配置、数据、systemd 单元、sudo 白名单与 `tgagent` 用户（需输入 `yes` 二次确认）
+
 ## 🧪 测试
 
 ```bash
