@@ -35,6 +35,10 @@ def setup_logging(log_dir: Path, level: str = "INFO", console: bool = True) -> l
         console_handler.setFormatter(logging.Formatter(LOG_FORMAT))
         root.addHandler(console_handler)
 
+    # 降低第三方库英文噪音；httpx 关闭后也不会再把 Bot Token 打印进日志
+    for noisy in ("apscheduler", "httpx", "httpcore", "httpcore2", "urllib3", "openai"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
+
     return logging.getLogger("tg-agent")
 
 

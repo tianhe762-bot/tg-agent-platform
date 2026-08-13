@@ -23,7 +23,7 @@ fi
 
 run_cli()
 {
-    sudo -u tgagent "$PY" -m src.cli "$@" 2>&1
+    (cd "$APP_DIR" && sudo -u tgagent "$PY" -m src.cli "$@" 2>&1)
 }
 
 while true; do
@@ -50,14 +50,14 @@ while true; do
     echo
     case "$CHOICE" in
         1) run_cli status ;;
-        2) journalctl -u tg-agent -f ;;
+        2) LANG=zh_CN.UTF-8 journalctl -u tg-agent -f -n 50 || true ;;
         3) run_cli reload ;;
         4) run_cli soft-reset ;;
         5) run_cli kill-subprocesses ;;
         6) run_cli backup ;;
-        7) nano "$APP_DIR/configs/.env" ;;
-        8) systemctl restart tg-agent.service && echo "✅ 已重启" ;;
-        9) bash "$APP_DIR/scripts/uninstall.sh"; [ "$?" -eq 0 ] && exit 0 ;;
+        7) nano "$APP_DIR/configs/.env" || true ;;
+        8) if systemctl restart tg-agent.service; then echo "✅ 已重启"; else echo "❌ 重启失败"; fi ;;
+        9) if bash "$APP_DIR/scripts/uninstall.sh"; then exit 0; fi ;;
         0) exit 0 ;;
         *) echo "❌ 无效选项"; sleep 1 ;;
     esac
