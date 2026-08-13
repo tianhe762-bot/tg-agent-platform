@@ -162,9 +162,11 @@ class AppConfig:
         """Build config from ``env_path`` (default ``configs/.env``) + os.environ."""
         root = Path(os.environ.get("TG_AGENT_ROOT", Path.cwd()))
         root = root.resolve()
+        env_name = (os.environ.get("TG_AGENT_ENV") or "").strip()
         if env_path is None:
-            env_path = Path(os.environ.get("TG_AGENT_ENV", "")) or root / "configs" / ".env"
-        env_path = Path(env_path)
+            env_path = Path(env_name) if env_name else root / "configs" / ".env"
+        else:
+            env_path = Path(env_path)
 
         if env_path.exists():
             load_dotenv(env_path, override=False, encoding="utf-8")

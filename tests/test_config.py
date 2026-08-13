@@ -64,3 +64,10 @@ def test_ensure_dirs(tmp_path, monkeypatch):
     assert cfg.data_dir.exists()
     assert cfg.control_dir.exists()
     assert cfg.log_dir.exists()
+
+
+def test_default_env_path_resolution(tmp_path, monkeypatch):
+    monkeypatch.setenv("TG_AGENT_ROOT", str(tmp_path))
+    monkeypatch.delenv("TG_AGENT_ENV", raising=False)
+    cfg = AppConfig.from_env()
+    assert cfg.env_path == (tmp_path / "configs" / ".env").resolve()

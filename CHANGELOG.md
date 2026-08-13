@@ -21,6 +21,7 @@ TG-Agent Python 版首个正式发布，作为 Bash 版 tg-bot-platform 的升�
 - 卸载：`scripts/uninstall.sh` 支持保留数据卸载与完全卸载两种模式
 - 管理面板：`sudo tg-agent` 交互式菜单（标题 + GitHub 链接，含状态/日志/配置/备份/重启/卸载）
 - 修复：面板执行 CLI 的工作目录问题；实时日志降噪（apscheduler/httpx 不再刷英文 INFO，同时避免 Bot Token 出现在日志）
+- 修复：`TG_AGENT_ENV` 未设置时配置路径错误解析为 `.`，导致 CLI 读不到 `.env`
 
 ### 与 Bash 版的关系
 
