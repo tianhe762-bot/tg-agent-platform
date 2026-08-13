@@ -37,7 +37,7 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Build release package
         run: bash scripts/release.sh
-      - name: CRLF check (project convention: no CRLF in release)
+      - name: "CRLF check (project convention: no CRLF in release)"
         run: |
           PKG=dist/tg-agent-v$(cat VERSION).tar.gz
           tar -xzf "$PKG" -C /tmp

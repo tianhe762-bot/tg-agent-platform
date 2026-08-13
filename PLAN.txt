@@ -44,10 +44,10 @@ TG-Agent 开发计划 (Python 版) v1.0.0
 15. GitHub Actions CI：flake8 lint + pytest + release 构建 + CRLF 校验
 
 阶段六：文档与交付 [DONE]
-16. 冒烟测试：CLI status / reload / soft-reset 已本地验证；Telegram
-    全功能验证需在 Linux 部署后进行
+16. 冒烟测试：CLI status / reload / soft-reset 已本地验证；已在 Linux
+    服务器（192.168.1.30）部署运行，Telegram 内发送 /status、/ai 验证中
 17. CHANGELOG.md 已撰写，版本 v1.0.0
-18. 发布包 dist/tg-agent-v1.0.0.tar.gz + .sha256（LF 规范化），
-    git 仓库已初始化并打 tag v1.0.0（远程推送待配置）
+18. 已发布到 github.com/tianhe762-bot/tg-agent-platform（公开仓库），
+    Release v1.0.0 含发布包与 SHA-256；远程部署完成，服务 24h 运行
 
 说明：本文件已由 GB18030 转为 UTF-8，便于版本管理。
