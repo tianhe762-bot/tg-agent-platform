@@ -22,6 +22,9 @@ TG-Agent Python 版首个正式发布，作为 Bash 版 tg-bot-platform 的升�
 - 管理面板：`sudo tg-agent` 交互式菜单（标题 + GitHub 链接，含状态/日志/配置/备份/重启/卸载）
 - 修复：面板执行 CLI 的工作目录问题；实时日志降噪（apscheduler/httpx 不再刷英文 INFO，同时避免 Bot Token 出现在日志）
 - 修复：`TG_AGENT_ENV` 未设置时配置路径错误解析为 `.`，导致 CLI 读不到 `.env`
+- 面板：新增"检查更新"（对比 GitHub Release，可一键更新并保留配置）；热重载/温和重置/强杀子进程增加二级确认界面（描述 + 0/1 选择）；日志改为文件浏览（进入日志目录用 less 查看，按 q 退出）
+- 日志：最多保留 30 天，自动清理过期文件
+- 配置示例：`configs/.env.example` 增加大量中文注释；安装完成后醒目提醒填写必填项
 
 ### 与 Bash 版的关系
 

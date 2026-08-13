@@ -50,7 +50,14 @@ echo "✅ 依赖安装完成"
 if [ ! -f "$APP_DIR/configs/.env" ]; then
     cp "$SRC_DIR/configs/.env.example" "$APP_DIR/configs/.env"
     chmod 600 "$APP_DIR/configs/.env"
-    echo "✅ 已生成 configs/.env（请填写 BOT_TOKEN / ADMIN_IDS / LLM_API_KEY）"
+    echo
+    echo "⚠️  首次安装必读：请立即编辑 /opt/tg-agent/configs/.env 填写以下必填项："
+    echo "     • BOT_TOKEN   —— Telegram 机器人令牌（@BotFather 获取）"
+    echo "     • ADMIN_IDS   —— 你的 Telegram 数字 ID（@userinfobot 获取）"
+    echo "     • LLM_API_KEY —— DeepSeek/OpenAI 等大模型密钥"
+    echo "     文件内有大量中文注释，照着填即可。"
+    echo "     填好后启动服务：sudo systemctl start tg-agent.service"
+    echo
 else
     echo "ℹ️ configs/.env 已存在，保留现有配置"
 fi
@@ -87,7 +94,7 @@ echo "       ✅ TG-Agent 安装完成"
 echo "=========================================="
 echo
 echo "下一步："
-echo "1. 编辑 $APP_DIR/configs/.env 填入配置"
+echo "1. 首次配置：编辑 $APP_DIR/configs/.env 填入 BOT_TOKEN / ADMIN_IDS / LLM_API_KEY（文件内有中文注释）"
 echo "2. 启动服务: sudo systemctl start tg-agent.service"
 echo "3. 查看日志: sudo journalctl -u tg-agent -f"
-echo "4. 管理面板: sudo tg-agent"
+echo "4. 管理面板: sudo tg-agent（含检查更新/备份/卸载，首次配置也可选 7 编辑配置）"

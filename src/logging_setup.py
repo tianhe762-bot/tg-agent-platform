@@ -11,9 +11,30 @@ from pathlib import Path
 LOG_FORMAT = "%(asctime)s %(levelname)s [%(name)s] %(message)s"
 
 
+def prune_logs(log_dir: Path, days: int = 30) -> int:
+    """Delete log files older than ``days``. Returns the number removed."""
+    import time as _time
+
+    cutoff = _time.time() - days * 86400
+    removed = 0
+    try:
+        for pattern in ("tg-agent.log*", "audit_sudo.log*"):
+            for path in Path(log_dir).glob(pattern):
+                try:
+                    if path.is_file() and path.stat().st_mtime < cutoff:
+                        path.unlink()
+                        removed += 1
+                except OSError:
+                    continue
+    except OSError:
+        pass
+    return removed
+
+
 def setup_logging(log_dir: Path, level: str = "INFO", console: bool = True) -> logging.Logger:
     """Configure root logger with rotating file handler and optional console output."""
     log_dir.mkdir(parents=True, exist_ok=True)
+    prune_logs(log_dir, days=30)
     root = logging.getLogger()
     root.setLevel(getattr(logging, level.upper(), logging.INFO))
 

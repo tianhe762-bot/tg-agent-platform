@@ -56,6 +56,7 @@ class TelegramGateway:
         self._offline: Deque[Dict] = deque()
         self._app: Optional[Application] = None
         self._last_ctx: Optional[ContextTypes.DEFAULT_TYPE] = None
+        self._last_prune: float = 0.0
 
     # ------------------------------------------------------------------
     async def _send(self, context: ContextTypes.DEFAULT_TYPE, chat_id: int, text: str) -> bool:
@@ -170,6 +171,18 @@ class TelegramGateway:
             await self.monitor.tick()
         except Exception:
             logger.exception("monitor tick failed")
+        # 日志最多保留 30 天，每小时检查一次
+        now = time.time()
+        if now - self._last_prune > 6 * 3600:
+            try:
+                from src.logging_setup import prune_logs
+
+                removed = prune_logs(self.config.log_dir, days=30)
+                if removed:
+                    logger.info("已清理 %s 个超过 30 天的日志文件", removed)
+            except Exception:
+                logger.exception("log pruning failed")
+            self._last_prune = now
 
     async def _job_control(self, context: ContextTypes.DEFAULT_TYPE) -> None:
         control = self.config.control_dir
