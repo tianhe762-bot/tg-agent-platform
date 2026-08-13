@@ -1,0 +1,29 @@
+[Unit]
+Description=TG-Agent (Python AI Agent)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=tgagent
+WorkingDirectory=/opt/tg-agent
+EnvironmentFile=/opt/tg-agent/configs/.env
+ExecStart=/opt/tg-agent/venv/bin/python -m src.gateway
+Restart=on-failure
+RestartSec=5
+
+# 资源限制：绝不让 Agent 挤占宿主 NAS 服务
+CPUQuota=95%
+IOWeight=20
+Nice=10
+MemoryMax=512M
+
+# 安全加固
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+NoNewPrivileges=yes
+ReadWritePaths=/opt/tg-agent/data /opt/tg-agent/logs /opt/tg-agent/configs
+
+[Install]
+WantedBy=multi-user.target

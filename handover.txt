@@ -1,0 +1,74 @@
+TG-Agent 项目交接说明
+
+## ? 已完成的工作
+
+1. 项目结构?搭建
+   - 创建了完整的目录?树：src/, src/tools/, configs/, data/, logs/, systemd/, scripts/
+   - ? 添加了所有必需的占位文件和实现文件（gateway.py, agent.py, cli.py, executor.py, system.py, monitor.py, db.py 等）
+
+2. ?核心功能实现
+   - **gateway.py**：使用 python?telegram?bot 实现长轮?询，消息路由至 Agent
+   - **agent.py**：简化的 ReAct ? 框架，支持 LLM ?? 调用（OpenAI）、工具调度（?执行命令、系统?监控、数据库查?询、sudo 提权）
+   - **cli.py**：提供 tg-agent-cli，支持 status、reload、soft-reset、kill-subprocesses 等子命令
+   - **tools/**:
+        * executor.py – ? 异步子进程?执行（支持 ionice 低?优先级 I/O）
+        * system.py – sudo ? 包装并写入?审计日志 audit_sudo.log
+        * monitor.py – 使用 psutil ? 收集 CPU、内存、?磁?盘 I/O ? 指标
+        * db.py – ? 基于 aiosqlite 的 SQLite?WAL ? 持久化，提供日志写入和查?询接口
+   - **config.py**：读取 .env 文件，提供统一配置对象
+   - **requirements.txt**：列出了所有必需的 Python ? 包（已去除 uvloop，因其在 Windows 不支持；在 Linux 部署时请确保已安装 uvloop）
+
+3. 配置与部署文件
+   - configs/.env.example：示例环境变量文件
+   - systemd/tg-agent.service：完整的 systemd 服务单元，包含资源限制、自动重启、日志输出到 journal
+   - scripts/install.sh：一?键安装脚本（创建?虚?拟环境、安装依?赖、复制 .env 示例、可选安装 systemd 服务）
+   - README.md：?详?细的快速启动指南、目录说明、常见问题解答
+
+4. 初始资料保留
+   - 保留了您提供的初始需求文件：TG-Agent：Debian 个人服务器 AI Agent ? 架构方案书 (?迭代版 v2.0).txt
+
+## 待完成 / ? 建议的后续工作
+
+1. **安全加?固**
+   - 在 system.py 中完善 sudo ?? 命令的白名单，建议仅?允许确切需要的命令（如 systemctl、reboot、shutdown、service）
+   - 考虑将敏感信息（Bot Token、OpenAI API Key）存?储在系统密?钥管理器或使用文件权限 600 保?护 .env 文件
+
+2. **日志管理**
+   - 目前只写入控制台和 audit_sudo.log，建议加入日志轮转（logrotate）或使用 logging.handlers.RotatingFileHandler
+
+3. **单元?测试与 CI**
+   - 补充 src/tests/ 下的完整?测试用例（使用 pytest 或 unittest）
+   - ? 添加 GitHub Actions ? 工作流，运行 lint（flake8）、?测试、以及构建 Docker ? 镜像（若需要）
+
+4. **功能?扩展**
+   - 根据需求在 agent.py 中注册更多工具（如文件上传/下载、定时任务、Webhook ? 接收等）
+   - 在 gateway.py 中加入 webhook ? 模式的支持（需配置 TLS 证书）
+   - 为 LLM ?? 调用增加重试、速率限制、token 计数等功能
+
+5. **性能调?优**
+   - 在 Linux 上确保已安装 uvloop（requirements.txt ? 已包含），以获得更高的事件?循环性能
+   - 如需更高并发，可考虑使用 gunicorn + uvicorn 或 FastAPI 替代当前的 long?polling 实现
+
+6. **文档完善**
+   - 将本交接文件（handover.txt）以及 README.md 翻译成中文或英文，以便团队成员快速上手
+   - ? 添加 API ? 指令说明（/status、/ai 等）以及示例交互
+
+## 如何交付给下一位开发者
+
+1. 将整个 tg-agent 目录打包（已在下一步完成）并传输。
+2. 在目标 Linux 主机上解压，运行以下命令完成部署：
+   ```bash
+   cd /path/to/tg-agent
+   chmod +x scripts/install.sh
+   sudo bash scripts/install.sh   # 以 root 运行以安装 systemd 服务
+   ```
+3. 编辑 configs/.env，?填入真实的 BOT_TOKEN、ADMIN_IDS、以及如需使用 OpenAI 的 OPENAI_API_KEY。
+4. 启动服务：
+   ```bash
+   sudo systemctl start tg-agent.service
+   sudo systemctl status tg-agent.service   # ? 检查是否 active (running)
+   sudo journalctl -u tg-agent -f         # ? 查看实时日志
+   ```
+5. 在 Telegram 中向您的 Bot 发送 /start、/help、/ai 等指令进行功能验证。
+
+?祝您使用?愉快，如有任何问题请随时联系。

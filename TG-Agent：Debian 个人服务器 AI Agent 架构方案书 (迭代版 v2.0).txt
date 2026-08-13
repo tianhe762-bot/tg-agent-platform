@@ -1,0 +1,91 @@
+TG-Agent：Debian 个人服务器 AI Agent 架构方案书 (v1.0.0 正式发布版)
+一、 项目定位与版本说明
+1.1 硬件约束与宿主环境
+●	硬件规格：Intel Core i3-4330（双核四线程，逻辑 CPU 数 = 4，系统算力基准 400%）、8GB DDR3 内存、老机械硬盘（低随机 IOPS、高寻道延迟）。
+●	宿主服务：同机运行 Immich（相册）、AList（网网盘）、Docker 服务等，Agent 必须维持极低开销运行，绝对不挤占宿主 CPU、内存、磁盘 I/O 资源。
+1.2 版本定位
+本版本为 TG-Agent v1.0.0 正式发布版（生产落地首发版本）。采用极简单体 Python 架构，彻底摒弃重型 IPC 与隔离守护进程，融合了资源精细限流、三维动态降级、物理盘 SQLite WAL 分级写、线程级 I/O 优先级控制（ionice/LWP）、子进程组强杀（PGID）、出入站双端安全过滤与脱敏、离线告警去重以及原子配置热重载等完整工程实践，确保在低配硬件环境下的 24 小时无人值守稳定运行。
+1.3 核心架构哲学
+“分级保活，IO 分层；温和兜底，边界闭环。”
+
+
+
+Telegram Gateway (白名单 / 去重离线队列 / 入出站双端脱敏与注入特征过滤)
+       │
+       ▼
+
+Monolithic Python Runtime (asyncio 主事件循环 + 模块级异常隔离 + 启动清扫)
+
+├── 任务调度 (轻量即时响应 / 重任务单线程低优先级 / 紧急操作 PGID 插队)
+
+├── 三维降级 (CPU负载 Load_1m / 可用内存 / 磁盘IO等待 diskstats)
+
+├── LLM 引擎 (429指数退避 / 5xx+超时 20s 三态熔断器)
+
+├── 分级写队列 (关键写同步高IO / 非关键写合并低IO) ──&gt; SQLite WAL (ionice 线程 LWP 分级)
+
+└── 工具入口层 (sudo死白名单 + 读写分离 + 字节/频率双限 + 100MB 写入配额) ──&gt; Debian Host
+
+
+二、 核心缺陷补全与精细化加固 (v5.2 关键修正与补强)
+1. 资源调度与 Cgroups / IO 优先级双重管控
+●	线程级精准 I/O 调度（LWP 定位与 Subprocess 预执行包装）：非关键写入（监控日志、指标数据）：工作线程内通过 syscall(SYS_gettid) 设置 ionice -c 3 闲置优先级，彻底让位于宿主 NAS 服务。关键状态写入（任务结果、授权确认、安全事件）：提升至 ionice -c 2 -n 7，避免被宿主大 I/O 长时间阻塞。Systemd 兜底：维持 IOWeight=20 全局低权重作为整机兜底。
+●	线程池单并发与 CPU 优先级隔离（ThreadPoolExecutor(max_workers=1) & os.nice(10)）：重任务线程池设为 max_workers=1，工作线程内执行 os.nice(10) 降低 CPU 调度优先级，确保主 asyncio 事件循环始终独占更高 CPU 调度权，保持毫秒级响应。
+●	三维动态分级降级（Load_1min / 内存 / diskstats）：采样内核 /proc/diskstats 计算平均 I/O 等待时间：一级降级（触发：Load_1min >= 2.8 或 可用内存 < 1.0GB 或 I/O等待 > 200ms / 恢复：Load_1min < 1.8 且 可用内存 > 1.2GB 且 I/O等待 < 100ms）：关闭后台轮询与事件聚合服务。二级降级（触发：Load_1min >= 3.6 或 可用内存 < 500MB 或 I/O等待 > 500ms / 恢复：Load_1min < 2.5 且 可用内存 > 800MB 且 I/O等待 < 200ms）：ReAct 压缩至单步直答，拒绝深诊断与写操作。
+●	子进程组（PGID）抢占插队机制：紧急操作（服务重启、磁盘紧急清理）插队时，不仅取消排队任务，同时通过进程组 ID（os.killpg(pgid, signal.SIGKILL)）强制终止当前正在运行的卡死子进程，防止线程/进程僵死。
+2. 磁盘数据加固：分级写落盘、VACUUM 整理与备份闭环
+●	关键写同步与非关键写归并：关键状态（同步落盘）：任务最终状态（SUCCESS/FAILED）、用户确认授权、安全事件。立即执行 db.commit() 并触发 PRAGMA wal_checkpoint(PASSIVE)。非关键状态（内存合并落盘）：中间监控日志与指标，暂存 asyncio.Queue 内存队列，每 10 秒或满 50 条合并写入一次。
+●	精准 VACUUM 触发公式与内存防护：碎片率计算：通过 PRAGMA freelist_count; 与 PRAGMA page_count; 计算 freelist_count / page_count > 0.30 且文件体积 > 50MB 时允许触发。内存溢出保护：前置检查系统负载，高负载自动延后；设置 5MB / 50 条内存队列溢出保护，超出则拒绝非关键写；每周执行 PRAGMA optimize 替代日常大部分整理需求。
+●	内置备份可靠性闭环：本地备份失败自动重试 2 次；支持配置外置挂载目录（如 /mnt/external_backup/）自动同步；备份前检测目录剩余空间，SHA-256 校验对比失败自动推送告警。
+3. 安全防线深度补全：sudo 级防护、双端脱敏与配额约束
+●	sudo 特权死白名单与二次断言：在 /etc/sudoers.d/tg-agent 中彻底禁止通配符，硬编码完整绝对路径与固定参数（如 agent ALL=(ALL) NOPASSWD: /bin/systemctl restart immich-docker.service）。特权操作执行前二次校验断言，操作记录独立保存至 /logs/audit_sudo.log（保留 90 天）。
+●	双端安全过滤与脱敏：入站注入过滤：特征匹配与提示词覆写 Token 剥离，非法请求直接拦截。出站脱敏器：正则与语义扫描遮蔽 API Key、JWT、密码、私有 IP 段及敏感系统路径（替换为 <path>）。
+●	配额限制与提权防护：Systemd 开启 ProtectSystem=strict 与 ProtectHome=read-only；受限上传目录 /data/uploads/ 配额 100MB（单文件 10MB），严禁写入 .sh/.py/.so 等脚本及可执行文件。
+
+4. 深度看门狗、429 退避与可控 CLI
+●	全路径死锁多维分级看门狗：快速检测（30s）：主事件循环超时 > 30s 且线程池与 DB 连接均无响应，判定死锁，立即触发快速重启。常规检测（120s）：看门狗同时检测事件循环、重任务队列数及 DB 写连通性；高负载（CPU > 85%）且指标正常时正常续刷保活。
+●	LLM 429 退避与 5xx/20s 超时三态熔断器：HTTP 429 (Rate Limit)：解析 Retry-After 标头进行指数退避重试（1s, 2s, 4s），不触发熔断。HTTP 5xx / 20s 超时：连续 3 次触发 Closed -> Open (2分钟) -> Half-Open (试探1次) 三态熔断器。
+●	可读可控的应急 CLI（Actionable Emergency CLI）：tg-agent-cli status（查看只读 DB 状态）；tg-agent-cli kill-subprocesses（向活跃子进程组发送 SIGKILL）；tg-agent-cli soft-reset（温和重置，清空任务队列与重置工具状态，不触碰 DB/WAL）；tg-agent-cli reload（配置原子热重载）；tg-agent-cli restart（调用 systemctl restart tg-agent）。
+5. 无人值守体验与韧性防护
+●	模块级异常隔离：非核心模块（监控、告警聚合）增加 try...except 隔离，非核心模块异常降级关闭，不引发主进程崩溃。
+●	离线告警去重与 24h 过期清理：离线队列上限 20 条，按内容 Hash 进行 1 小时内去重，丢弃超过 24 小时的过期告警。
+●	5 秒窗口告警聚合：滑动窗口事件聚合器将 5 秒内产生的多容器/服务关联崩溃事件压缩汇总为单一 SystemGroupEvent。
+●	磁盘低水位自动保护：journald 限制 100M，主日志限制 10MB x 3 轮转；可用磁盘空间 < 2GB 时触发日志清理并强切至最轻量模式。
+
+
+三、 项目代码目录结构
+tg-agent/
+├── app/
+│   ├── config.py                  # 环境变量、分级阈值、配额配置，支持原子热重载
+│   ├── gateway.py                 # Telegram网关、入站注入检测、三级出站脱敏、5s告警聚合
+│   ├── agent.py                   # ReAct循环、三维降级、429退避/5xx三态熔断、PGID紧急插队
+│   ├── tools/
+│   │   ├── executor.py            # 工具前置校验、字节/频率双限、sudo二次断言
+│   │   └── system.py              # realpath校验、读写分离、LWP线程分级ionice、单线程池
+│   ├── monitor.py                 # CPU/内存/diskstats磁盘IO三维采样、磁盘低水位检测
+│   └── db.py                      # 分级写队列、关键写同步、freelist占比VACUUM、内置备份
+├── cli.py                         # 解耦运维CLI：状态查询/PGID子进程强杀/温和重置/热重载
+├── data/
+│   ├── agent.db                   # SQLite主数据库
+│   └── uploads/                   # 受限写入目录，100MB配额限制 (禁止可执行文件)
+├── logs/
+│   └── audit_sudo.log             # 特权操作独立审计日志 (保留 90 天)
+└── systemd/
+    └── tg-agent.service           # CPUQuota=100%、IOWeight=20、ProtectSystem=strict
+四、 实施路线演进规划
+
+[Phase 1] 核心缺陷补全（基础加固） ──&gt; [Phase 2] 自愈与运维增强（稳定提升） ──&gt; [Phase 3] 磁盘与备份闭环（生产交付）
+
+●	Phase 1：核心缺陷补全（基础加固）
+○	落地线程 LWP 定位 I/O 分级优先级、三维降级机制，补齐机械盘 I/O 盲区。
+○	实现关键写合并优化、sudo 操作二次断言、写入目录 100MB 配额。
+○	新增入站轻量注入特征检测与出站脱敏，补全安全防线。
+●	Phase 2：自愈与运维增强（稳定提升）
+○	实现分级看门狗（30s 快速/120s 常规），优化故障响应速度与防误杀平衡。
+○	升级 CLI 工具，补充 PGID 子进程强杀、soft-reset 温和重置与 reload 配置热重载。
+○	落地模块级异常隔离，降低单体架构的崩溃风险。
+●	Phase 3：磁盘与备份闭环（生产交付）
+○	实现基于 freelist 占比与负载前置校验的安全 VACUUM 机制，预留 5MB 内存队列溢出保护。
+○	内置备份重试、SHA-256 校验与外置目录自动同步，完成数据容灾闭环。
+○	全量回归测试后，上线正式 24 小时无人值守运行。
+

@@ -1,0 +1,14 @@
+services:
+  tg-agent:
+    build: .
+    container_name: tg-agent
+    restart: unless-stopped
+    env_file:
+      - ../configs/.env
+    volumes:
+      - ../data:/opt/tg-agent/data
+      - ../logs:/opt/tg-agent/logs
+      - ../configs:/opt/tg-agent/configs
+    network_mode: host
+    environment:
+      TG_AGENT_ROOT: /opt/tg-agent

@@ -1,0 +1,53 @@
+TG-Agent 开发计划 (Python 版) v1.0.0
+====================================================
+
+状态：全部完成 [DONE]，2026-08-13 发布 v1.0.0
+
+阶段一：准备工作 [DONE]
+1. 确认开发环境：Python 3.11+（本机使用 3.12 验证）、pip、git、systemd、Docker
+2. 创建项目根目录及子目录结构（src/, src/tools/, configs/, data/, logs/,
+   scripts/, systemd/, docker/, tests/）
+
+阶段二：依赖与基础设施 [DONE]
+3. requirements.txt：python-telegram-bot / psutil / aiohttp / aiosqlite /
+   python-dotenv；openai 作为可选（内置 LLM 客户端走 OpenAI 兼容 HTTP 接口）
+4. 虚拟环境与依赖安装（本机 .venv 为旧损坏副本，测试使用捆绑 Python 3.12）
+
+阶段三：核心模块实现 [DONE]
+5. config.py：读取 .env，提供类型化配置与原子热重载（mtime + 键清理）
+6. gateway.py：python-telegram-bot 长轮询，管理员白名单、注入过滤、
+   出站脱敏、离线队列、看门狗与监控后台任务
+7. agent.py：ReAct 循环 + 工具注册表 + 降级联动 + 斜杠命令快速通道
+8. tools/：
+   - executor.py：异步子进程执行，超时/PGID 强杀、字节/频率双限、
+     sudo 死白名单 + 二次断言 + 审计日志
+   - system.py：系统状态、端口扫描、重启/关机（sudo 白名单）、备份
+   - monitor.py：/proc 采样 + psutil，三维降级、告警去重与 5 秒聚合
+   - db.py：aiosqlite + WAL，关键写同步/非关键写合并、安全 VACUUM、
+     备份重试 + SHA-256 + 外置同步
+   - mihomo.py：节点测速/切换/主组路由联动（移植自 Bash 版）
+   - wol.py：WOL 魔包发送
+9. cli.py：tg-agent-cli，status / reload / soft-reset / kill-subprocesses /
+   backup / restart（控制信号文件驱动）
+
+阶段四：部署与运维 [DONE]
+10. systemd/tg-agent.service：User=tgagent、CPUQuota=95%、IOWeight=20、
+    ProtectSystem=strict、PrivateTmp=yes、MemoryMax=512M
+11. docker/Dockerfile 与 docker-compose.yml
+12. scripts/install.sh：创建用户/目录/venv、复制文件、生成 .env、
+    sudoers 示例、启用 systemd
+13. README.md：项目简介、功能列表、安装步骤、使用方法、安全设计、发布说明
+
+阶段五：测试与质量保证 [DONE]
+14. 单元测试（pytest，41 个用例）：config / security / llm / agent /
+    executor / monitor / db / mihomo / wol / cli，全部通过
+15. GitHub Actions CI：flake8 lint + pytest + release 构建 + CRLF 校验
+
+阶段六：文档与交付 [DONE]
+16. 冒烟测试：CLI status / reload / soft-reset 已本地验证；Telegram
+    全功能验证需在 Linux 部署后进行
+17. CHANGELOG.md 已撰写，版本 v1.0.0
+18. 发布包 dist/tg-agent-v1.0.0.tar.gz + .sha256（LF 规范化），
+    git 仓库已初始化并打 tag v1.0.0（远程推送待配置）
+
+说明：本文件已由 GB18030 转为 UTF-8，便于版本管理。

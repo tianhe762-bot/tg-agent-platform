@@ -1,0 +1,15 @@
+# TG-Agent runtime dependencies
+python-telegram-bot>=20.0
+psutil
+aiohttp
+aiosqlite
+python-dotenv
+
+# Optional: official OpenAI SDK. The built-in LLM client speaks the
+# OpenAI-compatible HTTP API via aiohttp and does not require this package.
+# openai>=1.0
+
+# Dev / test
+pytest>=8.0
+pytest-asyncio>=0.23
+flake8>=7.0

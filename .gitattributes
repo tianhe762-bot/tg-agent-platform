@@ -1,0 +1,15 @@
+# 项目约定：发布包与仓库内文本一律 LF，防止 Windows autocrlf 破坏服务器脚本
+* text=auto
+*.sh text eol=lf
+*.py text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.service text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.conf text eol=lf
+*.example text eol=lf
+requirements.txt text eol=lf
+VERSION text eol=lf
+Dockerfile text eol=lf
+pytest.ini text eol=lf

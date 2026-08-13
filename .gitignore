@@ -1,0 +1,30 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.flake8
+*.egg-info/
+
+# runtime data (never commit)
+data/*.db
+data/*.db-*
+data/agent.pid
+data/control/
+data/uploads/
+data/backup/
+logs/*.log
+logs/*.log.*
+
+# secrets
+configs/.env
+
+# local junk
+python.exe
+dist/
+build/
+*.tar.gz
+*.sha256
+
+# 上一代 Bash 平台（独立项目，保留在工作区但不进入本仓库）
+tg-bot-platform/
+tg-bot-platform-main.zip
