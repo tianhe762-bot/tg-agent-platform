@@ -131,6 +131,8 @@ bash scripts/release.sh   # 生成 dist/tg-agent-vX.Y.Z.tar.gz + .sha256
 
 发布包内所有文本文件统一 LF 换行（CI 强制校验无 CRLF），防止 Windows autocrlf 破坏服务器脚本。
 
+版本策略：v1.0.0 为稳定基线，之后按语义化版本迭代（v1.0.x 补丁 / v1.x.0 新功能 / v2.0.0 重大变更）。每次发布更新 `VERSION` 与 `CHANGELOG.md`，打 tag 并创建 GitHub Release，已部署服务器通过面板「检查更新」一键升级。
+
 ## 🗑️ 卸载
 
 ```bash
